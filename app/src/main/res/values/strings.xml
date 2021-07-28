@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Touchpad</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">READY!</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_touchpad">Touchpad</string>
+
+    <!-- misc -->
+    <string name="yesno_yes">Yes</string>
+    <string name="yesno_no">No</string>
+
+    <!-- settings -->
+    <string name="settings_scroll_natural">Natural Scroll</string>
+    <string name="settings_scroll_multiplier">Scroll Multiplier</string>
+    <string name="settings_available_systems">Available Systems</string>
+    <string name="settings_notif_notset">Please select a system in settings</string>
+</resources>
