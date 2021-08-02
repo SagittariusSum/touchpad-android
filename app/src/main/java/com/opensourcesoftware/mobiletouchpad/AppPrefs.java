@@ -30,19 +30,30 @@ import android.content.SharedPreferences;
 import java.util.Locale;
 
 public final class AppPrefs {
+
+    public static final Integer KPORT_MIN = 1024;
+    public static final Integer KPORT_MAX = 65535;
+    public static final Integer KPORT_DEFAULT = 19999;
+
     private static final String KAPP_PREFS_NAME = "app_prefs";
     private static final String KKEY_SCROLL_MULTIPLIER = "SCROLL.MULTIPLIER";
     private static final String KKEY_SCROLL_NATURAL = "SCROLL.NATURAL";
     private static final String KKEY_HOST_SYSTEM = "HOST_SYSTEM";
+    private static final String KKEY_HOST_PORT = "HOST_PORT";
     private static float mScrollMultiplier = 2.f;
     private static boolean mScrollNatural = false;
     private static String mHostSystem = ""; // stored HOST_NAME{SPACE}IP
+    private static Integer mHostPort = KPORT_DEFAULT;
 
     public static void loadPreferences(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(AppPrefs.KAPP_PREFS_NAME, Context.MODE_PRIVATE);
         mScrollMultiplier = prefs.getFloat(AppPrefs.KKEY_SCROLL_MULTIPLIER, 2.f);
         mScrollNatural = prefs.getBoolean(AppPrefs.KKEY_SCROLL_NATURAL, false);
         mHostSystem = prefs.getString(AppPrefs.KKEY_HOST_SYSTEM, "");
+        mHostPort = prefs.getInt(AppPrefs.KKEY_HOST_PORT, AppPrefs.KPORT_DEFAULT);
+        if (!isPortValid(mHostPort)) {
+            mHostPort = AppPrefs.KPORT_DEFAULT;
+        }
     }
 
     public static void savePreferences(Context context) {
@@ -51,7 +62,19 @@ public final class AppPrefs {
         editor.putFloat(AppPrefs.KKEY_SCROLL_MULTIPLIER, mScrollMultiplier);
         editor.putBoolean(AppPrefs.KKEY_SCROLL_NATURAL, mScrollNatural);
         editor.putString(AppPrefs.KKEY_HOST_SYSTEM, mHostSystem);
-        editor.commit();
+        editor.putInt(AppPrefs.KKEY_HOST_PORT, mHostPort);
+        editor.apply();
+    }
+
+    public static String getMsgErrInvalidPortRange(Context context) {
+        return String.format(Locale.ENGLISH,
+                context.getString(R.string.msg_settings_invalid_port_range),
+                AppPrefs.KPORT_MIN,
+                AppPrefs.KPORT_MAX);
+    }
+
+    public static boolean isPortValid(Integer port) {
+        return ((port >= AppPrefs.KPORT_MIN) && (port <= AppPrefs.KPORT_MAX));
     }
 
     public static String formatMultiplier(float multiplier) {
@@ -90,6 +113,12 @@ public final class AppPrefs {
         mHostSystem = hostSystem;
     }
 
+    public static void setHostPort(Integer port) {
+        if (isPortValid(port)) {
+            mHostPort = port;
+        }
+    }
+
     private static String[] getHostSystemParts() {
         return mHostSystem.split("\\s+");
     }
@@ -105,6 +134,10 @@ public final class AppPrefs {
 
     public static String getHostSystemName() {
         return getHostSystemPart(0, "");
+    }
+
+    public static Integer getHostPort() {
+        return mHostPort;
     }
 }
 

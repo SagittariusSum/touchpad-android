@@ -27,16 +27,23 @@ package com.opensourcesoftware.mobiletouchpad;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.PersistableBundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,12 +65,14 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     private final ArrayList<DiscoveryThread.MEVSystemItem> mServerList = new ArrayList<>();
     private Button btnScrollNatural = null;
     private Button btnScrollMultiplier = null;
+    private Button btnUDPPort = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
         setTitle(getResources().getString(R.string.title_activity_settings));
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -89,6 +98,9 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
                 showScrollMultiplierOptions();
             }
         });
+        btnUDPPort = findViewById(R.id.btnUDPPort);
+        btnUDPPort.setText(String.valueOf(AppPrefs.getHostPort()));
+        btnUDPPort.setOnClickListener(v -> changeUDPPort());
 
         mServerListViewAdapter = new DiscoveryThreadItemListAdapter(this, mServerList);
         mServerListView.setAdapter(mServerListViewAdapter);
@@ -103,8 +115,61 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
             }
         });
 
-        mDiscoveryThread = new DiscoveryThread(19999, this, this);
+        restartDiscoveryThread();
+    }
+
+    private void restartDiscoveryThread() {
+        if (mDiscoveryThread != null) {
+            mDiscoveryThread.interrupt();
+        }
+        mDiscoveryThread = new DiscoveryThread(AppPrefs.getHostPort(), this, this);
         mDiscoveryThread.start();
+    }
+
+    private void changeUDPPort() {
+        showNumberInput(getResources().getString(R.string.settings_udp_port), btnUDPPort.getText().toString(), new NumberInputListener() {
+            @Override
+            public void onValueChanged(String value) {
+                try {
+                    Integer port = Integer.parseInt(value);
+                    if (AppPrefs.isPortValid(port)) {
+                        btnUDPPort.setText(String.valueOf(port));
+                        AppPrefs.setHostPort(port);
+                        AppPrefs.savePreferences(SettingsActivity.this);
+                        restartDiscoveryThread();
+                    } else {
+                        Toast.makeText(SettingsActivity.this,
+                                AppPrefs.getMsgErrInvalidPortRange(SettingsActivity.this),
+                                Toast.LENGTH_LONG).show();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "onValueChanged: " + value, e);
+                }
+            }
+        });
+    }
+
+    public interface NumberInputListener {
+        void onValueChanged(String value);
+    }
+
+    private void showNumberInput(String title, String initialValue, NumberInputListener listener) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
+        alert.setTitle(title);
+        final EditText input = new EditText(SettingsActivity.this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setRawInputType(Configuration.KEYBOARD_12KEY);
+        input.setText(initialValue);
+        alert.setView(input);
+        alert.setPositiveButton(R.string.ok, (DialogInterface.OnClickListener) (dialog, whichButton) -> listener.onValueChanged(input.getText().toString()));
+        alert.setNegativeButton(R.string.cancel, (dialog, whichButton) -> { /* nada */ });
+        input.requestFocus();
+        alert.show();
+        Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
+        }, 250);
     }
 
     private void showScrollMultiplierOptions() {

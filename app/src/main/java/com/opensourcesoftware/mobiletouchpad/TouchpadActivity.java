@@ -204,7 +204,7 @@ public class TouchpadActivity extends AppCompatActivity
         AppPrefs.loadPreferences(this);
         mTouchpadGestures.setScrollMultiplier(AppPrefs.getScrollMultiplier());
         mTouchpadGestures.setScrollNatural(AppPrefs.getScrollNatural());
-        startUDPClientThread(AppPrefs.getHostSystemIP());
+        startUDPClientThread(AppPrefs.getHostSystemIP(), AppPrefs.getHostPort());
     }
 
     private void setStatusColors(StatusType statusType) {
@@ -243,11 +243,11 @@ public class TouchpadActivity extends AppCompatActivity
                     mWifiIsOnline = true;
                     if (mWifiFirstGo) {
                         mWifiFirstGo = false;
-                        startUDPClientThread(AppPrefs.getHostSystemIP());
+                        startUDPClientThread(AppPrefs.getHostSystemIP(), AppPrefs.getHostPort());
                     } else {
                         // wifi was off and then on
                         // give it about 5 seconds
-                        mMainHandler.postDelayed(() -> startUDPClientThread(AppPrefs.getHostSystemIP()), 5000);
+                        mMainHandler.postDelayed(() -> startUDPClientThread(AppPrefs.getHostSystemIP(), AppPrefs.getHostPort()), 5000);
                     }
                     break;
                 case WifiManager.WIFI_STATE_DISABLED:
@@ -264,7 +264,7 @@ public class TouchpadActivity extends AppCompatActivity
     public void onDeviceShakeDetected() {
         Log.d(TAG, "onDeviceShakeDetected: SHAKE");
 
-        showSettings();
+//        showSettings();
     }
 
     private void showSettings() {
@@ -409,7 +409,7 @@ public class TouchpadActivity extends AppCompatActivity
         sendTS = System.currentTimeMillis();
     }
 
-    private void startUDPClientThread(String hostIP) {
+    private void startUDPClientThread(String hostIP, Integer hostPort) {
         //TODO PING-PONG for connection status
         if (mUDPClientThread != null) {
             mUDPClientThread.interrupt();
@@ -439,7 +439,7 @@ public class TouchpadActivity extends AppCompatActivity
                     while (!Thread.currentThread().isInterrupted()) {
                         if (!mUDPCmdQueue.isEmpty()) {
                             final String data = mUDPCmdQueue.poll() + "\n";
-                            dp = new DatagramPacket(data.getBytes(), data.length(), serverAddr, 19999);
+                            dp = new DatagramPacket(data.getBytes(), data.length(), serverAddr, hostPort);
                             ds.send(dp);
                             long diff = System.currentTimeMillis() - sendTS;
                             if (diff > 10) {

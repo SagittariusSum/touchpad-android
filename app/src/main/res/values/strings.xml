@@ -8,10 +8,16 @@
     <!-- misc -->
     <string name="yesno_yes">Yes</string>
     <string name="yesno_no">No</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 
     <!-- settings -->
     <string name="settings_scroll_natural">Natural Scroll</string>
     <string name="settings_scroll_multiplier">Scroll Multiplier</string>
     <string name="settings_available_systems">Available Systems</string>
     <string name="settings_notif_notset">Please select a system in settings</string>
+    <string name="settings_udp_port">UDP Port</string>
+
+    <!-- toasts -->
+    <string name="msg_settings_invalid_port_range">Port must be between %d and %d</string>
 </resources>
