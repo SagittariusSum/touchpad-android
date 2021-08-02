@@ -88,75 +88,10 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         actionSwipe,
         actionPinch,
         actionScroll,
+        actionLongPress,
         actionTaps,
         actionMove
     };
-
-    public interface UILongPressGestureRecognizerListener {
-        void onLongPressEvent();
-    }
-
-    private class UILongPressGestureRecognizer {
-
-        private final String TAG = "UILongPressGestureRecog";
-
-        private UILongPressGestureRecognizerListener mListener = null;
-        private final Handler mHandler = new Handler();
-        private Runnable mLongPressed = () -> mListener.onLongPressEvent();
-        private long mTouchDownTS;
-        private int mLongPressTimeout = 500;
-        private boolean mInitLastXY = false;
-        private boolean mHasCallbacks = false;
-        private float mLastX = 0.f;
-        private float mLastY = 0.f;
-
-        public UILongPressGestureRecognizer(UILongPressGestureRecognizerListener longPressListener) {
-            this.mListener = longPressListener;
-            this.mLongPressTimeout = ViewConfiguration.getLongPressTimeout();
-        }
-
-        private void resetHandler(boolean addCallback) {
-            mHasCallbacks = false;
-            mHandler.removeCallbacks(mLongPressed);
-            if (addCallback) {
-                mHandler.postDelayed(mLongPressed, mLongPressTimeout);
-                mHasCallbacks = true;
-            }
-        }
-
-        public boolean onTouchEvent(MotionEvent event) {
-            int action = (event.getAction() & MotionEvent.ACTION_MASK);
-
-            switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    resetHandler(true);
-                    break;
-                case MotionEvent.ACTION_POINTER_DOWN:
-//                    Log.d(TAG, "onTouchEvent: ACTION_POINTER_DOWN");
-                    resetHandler(true);
-                    mTouchDownTS = System.currentTimeMillis();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    float currX = event.getX();
-                    float currY = event.getY();
-//                    Log.d(TAG, "onTouchEvent: ACTION_MOVE " + currX + " / " + currY);
-                    long tsSinceTouchDown = System.currentTimeMillis() - mTouchDownTS;
-                    boolean ignoreMovement = ((Math.abs(currX - mLastX) < 5) && (Math.abs(currY - mLastY) < 5));
-                    if ((tsSinceTouchDown < 60) || (!mInitLastXY) || ignoreMovement) {
-                        mInitLastXY = true;
-                        mLastX = currX;
-                        mLastY = currY;
-                        if (!mHasCallbacks) resetHandler(true);
-                        break;
-                    }
-                case MotionEvent.ACTION_UP:
-//                    Log.d(TAG, "onTouchEvent: ACTION_UP");
-                    resetHandler(false);
-                    break;
-            }
-            return true;
-        }
-    }
 
     private int mFingersDown = 0;
     private int mTapFingers = 0;
@@ -190,20 +125,18 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         mScaleDetector.setQuickScaleEnabled(false);
         mGestureDetectorCompat = new GestureDetectorCompat(v.getContext(), this);
 
-        mLongPressGestureRecognizer = new UILongPressGestureRecognizer(new UILongPressGestureRecognizerListener() {
-            @Override
-            public void onLongPressEvent() {
+        mLongPressGestureRecognizer = new UILongPressGestureRecognizer(() -> {
 //                Log.d(TAG, "onLongPressEvent: FINGERS: " + mFingersDown);
-                moveDrag = (mFingersDown == 1);
-                if (moveDrag) {
+            mMovementAction = MovementAction.actionLongPress;
+            moveDrag = (mFingersDown == 1);
+            if (moveDrag) {
 //                    Log.d(TAG, "onLongPressEvent: MOVE_DRAG_BEGIN");
-                    vibrate(100);
-                    mListener.OnMoveDragBeginEvent();
-                }
-                if (mFingersDown == 2) {
-                    vibrate(150);
-                    mListener.OnClickOptionsEvent();
-                }
+                vibrate(100);
+                mListener.OnMoveDragBeginEvent();
+            }
+            if (mFingersDown == 2) {
+                vibrate(150);
+                mListener.OnClickOptionsEvent();
             }
         });
     }
@@ -310,9 +243,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             float x = -distanceX;
             float y = -distanceY;
 
-            if ((x != 0) && (y != 0)) {
-                sendOnMoveEvent(x, y);
-            }
+            sendOnMoveEvent(x, y);
         }
         return true;
     }
@@ -405,7 +336,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 mListener.OnMoveDragEndEvent();
             } else if (mMovementAction == MovementAction.actionSwipe) {
                 mListener.OnSwipeEvent(mSwipeDirection, mScrollFingersDown);
-            } else if (mMovementAction == MovementAction.actionNone) {
+            } else if ((mMovementAction == MovementAction.actionNone) && (mTapFingers > 1)) {
 //                Log.d(TAG, "onTouch: UP " + mTapFingers);
                 mListener.OnTapEvent(mTapFingers);
             }
@@ -421,9 +352,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                     float x = x1 - x0;
                     float y = y1 - y0;
 
-                    if ((x != 0) && (y != 0)) {
-                        sendOnMoveEvent(x, y);
-                    }
+                    sendOnMoveEvent(x, y);
                 }
                 return true;
             }
