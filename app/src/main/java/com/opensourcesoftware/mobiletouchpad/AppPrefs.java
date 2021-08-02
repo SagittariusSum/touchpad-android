@@ -35,46 +35,71 @@ public final class AppPrefs {
     public static final Integer KPORT_MAX = 65535;
     public static final Integer KPORT_DEFAULT = 19999;
 
+    // bounce values are in milliseconds
+    public static final Integer KBOUNCE_MIN = 5;
+    public static final Integer KBOUNCE_MAX = 150;
+    public static final Integer KBOUNCE_DEFAULT = 55;
+
     private static final String KAPP_PREFS_NAME = "app_prefs";
     private static final String KKEY_SCROLL_MULTIPLIER = "SCROLL.MULTIPLIER";
     private static final String KKEY_SCROLL_NATURAL = "SCROLL.NATURAL";
     private static final String KKEY_HOST_SYSTEM = "HOST_SYSTEM";
     private static final String KKEY_HOST_PORT = "HOST_PORT";
+    private static final String KKEY_BOUNCE = "BOUNCE";
     private static float mScrollMultiplier = 2.f;
     private static boolean mScrollNatural = false;
     private static String mHostSystem = ""; // stored HOST_NAME{SPACE}IP
     private static Integer mHostPort = KPORT_DEFAULT;
+    private static Integer mBounce = KBOUNCE_DEFAULT;
 
     public static void loadPreferences(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(AppPrefs.KAPP_PREFS_NAME, Context.MODE_PRIVATE);
-        mScrollMultiplier = prefs.getFloat(AppPrefs.KKEY_SCROLL_MULTIPLIER, 2.f);
-        mScrollNatural = prefs.getBoolean(AppPrefs.KKEY_SCROLL_NATURAL, false);
-        mHostSystem = prefs.getString(AppPrefs.KKEY_HOST_SYSTEM, "");
-        mHostPort = prefs.getInt(AppPrefs.KKEY_HOST_PORT, AppPrefs.KPORT_DEFAULT);
-        if (!isPortValid(mHostPort)) {
-            mHostPort = AppPrefs.KPORT_DEFAULT;
-        }
+        SharedPreferences prefs = context.getSharedPreferences(KAPP_PREFS_NAME, Context.MODE_PRIVATE);
+        mScrollMultiplier = prefs.getFloat(KKEY_SCROLL_MULTIPLIER, 2.f);
+        mScrollNatural = prefs.getBoolean(KKEY_SCROLL_NATURAL, false);
+        mHostSystem = prefs.getString(KKEY_HOST_SYSTEM, "");
+
+        mHostPort = prefs.getInt(KKEY_HOST_PORT, KPORT_DEFAULT);
+        if (!isPortValid(mHostPort)) mHostPort = KPORT_DEFAULT;
+
+        mBounce = prefs.getInt(KKEY_BOUNCE, KBOUNCE_DEFAULT);
+        if (!isBounceValid(mBounce)) mBounce = KBOUNCE_DEFAULT;
     }
 
     public static void savePreferences(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(AppPrefs.KAPP_PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(KAPP_PREFS_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putFloat(AppPrefs.KKEY_SCROLL_MULTIPLIER, mScrollMultiplier);
-        editor.putBoolean(AppPrefs.KKEY_SCROLL_NATURAL, mScrollNatural);
-        editor.putString(AppPrefs.KKEY_HOST_SYSTEM, mHostSystem);
-        editor.putInt(AppPrefs.KKEY_HOST_PORT, mHostPort);
+        editor.putFloat(KKEY_SCROLL_MULTIPLIER, mScrollMultiplier);
+        editor.putBoolean(KKEY_SCROLL_NATURAL, mScrollNatural);
+        editor.putString(KKEY_HOST_SYSTEM, mHostSystem);
+        editor.putInt(KKEY_HOST_PORT, mHostPort);
+        editor.putInt(KKEY_BOUNCE, mBounce);
         editor.apply();
     }
 
     public static String getMsgErrInvalidPortRange(Context context) {
         return String.format(Locale.ENGLISH,
                 context.getString(R.string.msg_settings_invalid_port_range),
-                AppPrefs.KPORT_MIN,
-                AppPrefs.KPORT_MAX);
+                KPORT_MIN,
+                KPORT_MAX);
+    }
+
+    public static String getMsgErrInvalidBounceRange(Context context) {
+        return String.format(Locale.ENGLISH,
+                context.getString(R.string.msg_settings_invalid_bounce_range),
+                KBOUNCE_MIN,
+                KBOUNCE_MAX);
+    }
+
+    private static boolean isIntInRange(Integer value, Integer start, Integer end) {
+        return ((value >= start) && (value <= end));
     }
 
     public static boolean isPortValid(Integer port) {
-        return ((port >= AppPrefs.KPORT_MIN) && (port <= AppPrefs.KPORT_MAX));
+        return isIntInRange(port, KPORT_MIN, KPORT_MAX);
+    }
+
+    public static boolean isBounceValid(Integer bounce) {
+        return isIntInRange(bounce, KBOUNCE_MIN, KBOUNCE_MAX);
     }
 
     public static String formatMultiplier(float multiplier) {
@@ -101,22 +126,16 @@ public final class AppPrefs {
         mScrollNatural = scrollNatural;
     }
 
-    public static String getHostSystem() {
-        return mHostSystem;
-    }
-
     public static void setHostSystem(String name, String hostIP) {
         mHostSystem = name + " " + hostIP;
     }
 
-    public static void setHostSystem(String hostSystem) {
-        mHostSystem = hostSystem;
+    public static void setHostPort(Integer port) {
+        if (isPortValid(port)) mHostPort = port;
     }
 
-    public static void setHostPort(Integer port) {
-        if (isPortValid(port)) {
-            mHostPort = port;
-        }
+    public static void setBounce(Integer bounce) {
+        if (isBounceValid(bounce)) mBounce = bounce;
     }
 
     private static String[] getHostSystemParts() {
@@ -138,6 +157,10 @@ public final class AppPrefs {
 
     public static Integer getHostPort() {
         return mHostPort;
+    }
+
+    public static Integer getBounce() {
+        return mBounce;
     }
 }
 

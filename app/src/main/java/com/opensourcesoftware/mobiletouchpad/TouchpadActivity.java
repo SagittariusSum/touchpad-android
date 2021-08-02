@@ -202,6 +202,7 @@ public class TouchpadActivity extends AppCompatActivity
 
     private void applySettings() {
         AppPrefs.loadPreferences(this);
+        mTouchpadGestures.setBounce(AppPrefs.getBounce());
         mTouchpadGestures.setScrollMultiplier(AppPrefs.getScrollMultiplier());
         mTouchpadGestures.setScrollNatural(AppPrefs.getScrollNatural());
         startUDPClientThread(AppPrefs.getHostSystemIP(), AppPrefs.getHostPort());

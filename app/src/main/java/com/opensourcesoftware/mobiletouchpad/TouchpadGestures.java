@@ -69,7 +69,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
 
     private final static String TAG = "TouchGestures";
     private final static float KBOUNDS_XY = 100.f;
-    private final static long KBOUNCE_MS = 55;
 
     public enum SwipeDirection {
         swipeUp,
@@ -115,6 +114,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     private boolean mScrollNatural = false;
     private float mScrollMultiplier = 1.f;
 
+    private long mBounceTimeOutMS = 55;
+
 //    private final Handler mainHandler = new Handler();
 
     public TouchpadGestures(View v, TouchGesturesEventsListener listener) {
@@ -139,6 +140,10 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 mListener.OnClickOptionsEvent();
             }
         });
+    }
+
+    public void setBounce(long bounce) {
+        mBounceTimeOutMS = bounce;
     }
 
     public void setScrollMultiplier(float multiplier) {
@@ -297,7 +302,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     private boolean isBounce(long prevTMS, long currTMS) {
-        return ((currTMS - prevTMS) <= KBOUNCE_MS);
+        return ((currTMS - prevTMS) <= mBounceTimeOutMS);
     }
 
     private void vibrate(long duration) {

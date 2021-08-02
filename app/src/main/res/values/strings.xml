@@ -17,7 +17,9 @@
     <string name="settings_available_systems">Available Systems</string>
     <string name="settings_notif_notset">Please select a system in settings</string>
     <string name="settings_udp_port">UDP Port</string>
+    <string name="settings_bounce">Bounce Time Out(ms)</string>
 
     <!-- toasts -->
     <string name="msg_settings_invalid_port_range">Port must be between %d and %d</string>
+    <string name="msg_settings_invalid_bounce_range">Bounce must be between %d and %d</string>
 </resources>

@@ -29,7 +29,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PersistableBundle;
@@ -66,6 +65,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     private Button btnScrollNatural = null;
     private Button btnScrollMultiplier = null;
     private Button btnUDPPort = null;
+    private Button btnBounce = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +101,9 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
         btnUDPPort = findViewById(R.id.btnUDPPort);
         btnUDPPort.setText(String.valueOf(AppPrefs.getHostPort()));
         btnUDPPort.setOnClickListener(v -> changeUDPPort());
+        btnBounce = findViewById(R.id.btnBounce);
+        btnBounce.setText(String.valueOf(AppPrefs.getBounce()));
+        btnBounce.setOnClickListener(v -> changeBounce());
 
         mServerListViewAdapter = new DiscoveryThreadItemListAdapter(this, mServerList);
         mServerListView.setAdapter(mServerListViewAdapter);
@@ -127,24 +130,40 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     }
 
     private void changeUDPPort() {
-        showNumberInput(getResources().getString(R.string.settings_udp_port), btnUDPPort.getText().toString(), new NumberInputListener() {
-            @Override
-            public void onValueChanged(String value) {
-                try {
-                    Integer port = Integer.parseInt(value);
-                    if (AppPrefs.isPortValid(port)) {
-                        btnUDPPort.setText(String.valueOf(port));
-                        AppPrefs.setHostPort(port);
-                        AppPrefs.savePreferences(SettingsActivity.this);
-                        restartDiscoveryThread();
-                    } else {
-                        Toast.makeText(SettingsActivity.this,
-                                AppPrefs.getMsgErrInvalidPortRange(SettingsActivity.this),
-                                Toast.LENGTH_LONG).show();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "onValueChanged: " + value, e);
+        showNumberInput(getResources().getString(R.string.settings_udp_port), AppPrefs.getHostPort().toString(), value -> {
+            try {
+                Integer port = Integer.parseInt(value);
+                if (AppPrefs.isPortValid(port)) {
+                    btnUDPPort.setText(String.valueOf(port));
+                    AppPrefs.setHostPort(port);
+                    AppPrefs.savePreferences(SettingsActivity.this);
+                    restartDiscoveryThread();
+                } else {
+                    Toast.makeText(SettingsActivity.this,
+                            AppPrefs.getMsgErrInvalidPortRange(SettingsActivity.this),
+                            Toast.LENGTH_LONG).show();
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "onValueChanged: changeUDPPort: " + value, e);
+            }
+        });
+    }
+
+    private void changeBounce() {
+        showNumberInput(getResources().getString(R.string.settings_bounce), AppPrefs.getBounce().toString(), value -> {
+            try {
+                Integer bounce = Integer.parseInt(value);
+                if (AppPrefs.isBounceValid(bounce)) {
+                    btnBounce.setText(String.valueOf(bounce));
+                    AppPrefs.setBounce(bounce);
+                    AppPrefs.savePreferences(SettingsActivity.this);
+                } else {
+                    Toast.makeText(SettingsActivity.this,
+                            AppPrefs.getMsgErrInvalidBounceRange(SettingsActivity.this),
+                            Toast.LENGTH_LONG).show();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "onValueChanged: changeBounce: " + value, e);
             }
         });
     }
@@ -244,11 +263,11 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     public class DiscoveryThreadItemListAdapter extends BaseAdapter {
         private final ArrayList<DiscoveryThread.MEVSystemItem> mList;
-        private final LayoutInflater layoutInflater;
+        private final LayoutInflater mLayoutInflater;
 
         public DiscoveryThreadItemListAdapter(Context aContext, ArrayList<DiscoveryThread.MEVSystemItem> list) {
             this.mList = list;
-            layoutInflater = LayoutInflater.from(aContext);
+            mLayoutInflater = LayoutInflater.from(aContext);
         }
 
         @Override
@@ -269,7 +288,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
         public View getView(int position, View v, ViewGroup vg) {
             ViewHolder holder;
             if (v == null) {
-                v = layoutInflater.inflate(R.layout.system_item, null);
+                v = mLayoutInflater.inflate(R.layout.system_item, null);
                 holder = new ViewHolder();
                 holder.tvHostIP = (TextView) v.findViewById(R.id.tvHostIP);
                 holder.tvName = (TextView) v.findViewById(R.id.tvName);
