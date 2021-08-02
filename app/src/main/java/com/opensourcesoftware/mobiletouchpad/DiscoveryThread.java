@@ -84,8 +84,6 @@ public class DiscoveryThread extends Thread {
         Log.d(TAG, "run: START");
         String data = "";
         byte[] rawMsg = new byte[1000];
-        //MulticastSocket ms = null;
-//        DatagramSocket ds = null;
         MulticastSocket ds = null;
 
         DatagramPacket packet = new DatagramPacket(rawMsg, rawMsg.length);

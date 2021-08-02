@@ -316,7 +316,7 @@ public class TouchpadActivity extends AppCompatActivity
                 right++;
                 break;
         }
-        sendGestureEvent(String.format(Locale.ENGLISH, "G_SWIPE %d U%d,D%d,L%d,R%d ok",
+        sendGestureEvent(String.format(Locale.ENGLISH, CmdConsts.KGESTURE_SWIPE + " %d U%d,D%d,L%d,R%d ok",
                 fingers,
                 up,
                 down,
@@ -327,72 +327,72 @@ public class TouchpadActivity extends AppCompatActivity
     @Override
     public void OnPinchEvent(TouchpadGestures.PinchDirection direction, int fingers) {
 //        Log.d(TAG, "OnPinchEvent: " + direction.toString() + " fingers: " + String.valueOf(fingers));
-        sendGestureEvent("G_PINCH " + (direction == TouchpadGestures.PinchDirection.pinchIn ? "IN" : "OUT") + " " + fingers + " ok");
+        sendGestureEvent(CmdConsts.KGESTURE_PINCH + " " + (direction == TouchpadGestures.PinchDirection.pinchIn ? "IN" : "OUT") + " " + fingers + " ok");
     }
 
     @Override
     public void OnMoveDragBeginEvent() {
 //        Log.d(TAG, "OnMoveDragBeginEvent: ");
-        sendGestureEvent("ACTION:MOVE_DRAG_BEGIN");
+        sendGestureEvent(CmdConsts.KACTION_MOVE_DRAG_BEGIN);
     }
 
     @Override
     public void OnMoveDragEndEvent() {
 //        Log.d(TAG, "OnMoveDragEndEvent: ");
-        sendGestureEvent("ACTION:MOVE_DRAG_END");
+        sendGestureEvent(CmdConsts.KACTION_MOVE_DRAG_END);
     }
 
     @Override
     public void OnMoveEvent(int x, int y) {
 //        Log.d(TAG, "OnMoveEvent: ");
-        sendGestureEvent("ACTION:MOVE " + String.valueOf(x) + " " + String.valueOf(y));
+        sendGestureEvent(CmdConsts.KACTION_MOVE + " " + x + " " + y);
     }
 
     @Override
     public void OnScrollDownEvent(String speed) {
 //        Log.d(TAG, "OnScrollDownEvent: " + speed);
-        sendGestureEvent("SCROLL_DOWN " + speed);
+        sendGestureEvent(CmdConsts.KSCROLL_DOWN + " " + speed);
     }
 
     @Override
     public void OnScrollUpEvent(String speed) {
 //        Log.d(TAG, "OnScrollUpEvent: " + speed);
-        sendGestureEvent("SCROLL_UP " + speed);
+        sendGestureEvent(CmdConsts.KSCROLL_UP + " " + speed);
     }
 
     @Override
     public void OnScrollLeftEvent(String speed) {
 //        Log.d(TAG, "OnScrollLeftEvent: " + speed);
-        sendGestureEvent("SCROLL_LEFT " + speed);
+        sendGestureEvent(CmdConsts.KSCROLL_LEFT + " " + speed);
     }
 
     @Override
     public void OnScrollRightEvent(String speed) {
 //        Log.d(TAG, "OnScrollRightEvent: " + speed);
-        sendGestureEvent("SCROLL_RIGHT " + speed);
+        sendGestureEvent(CmdConsts.KSCROLL_RIGHT + " " + speed);
     }
 
     @Override
     public void OnClickDefaultEvent() {
 //        Log.d(TAG, "OnClickDefaultEvent: ");
-        sendGestureEvent("ACTION:CLICK_DEFAULT");
+        sendGestureEvent(CmdConsts.KACTION_CLICK_DEFAULT);
     }
 
     @Override
     public void OnClickOptionsEvent() {
 //        Log.d(TAG, "OnClickOptionsEvent: ");
-        sendGestureEvent("ACTION:CLICK_OPTIONS");
+        sendGestureEvent(CmdConsts.KACTION_CLICK_OPTIONS);
     }
 
     @Override
     public void OnClickDoubleEvent() {
 //        Log.d(TAG, "OnClickDoubleEvent: ");
-        sendGestureEvent("ACTION:CLICK_DOUBLE");
+        sendGestureEvent(CmdConsts.KACTION_CLICK_DOUBLE);
     }
 
     @Override
     public void OnTapEvent(int fingers) {
-        sendGestureEvent("ACTION:TAP " + fingers);
+        sendGestureEvent(CmdConsts.KACTION_TAP + " " + fingers);
     }
 
     @Override
@@ -406,12 +406,9 @@ public class TouchpadActivity extends AppCompatActivity
         }, duration);
     }
 
-    private long sendTS;
-
     private void sendGestureEvent(String s) {
         Log.d(TAG, "sendGestureEvent: " + s);
         mUDPCmdQueue.add(s);
-        sendTS = System.currentTimeMillis();
     }
 
     private void startUDPClientThread(String hostIP, Integer hostPort) {
@@ -428,44 +425,7 @@ public class TouchpadActivity extends AppCompatActivity
         }
         mUDPCmdQueue.clear();
         setStatusText(StatusType.OK, String.format("%s / %s", AppPrefs.getHostSystemName(), AppPrefs.getHostSystemIP()));
-        mUDPClientThread = new Thread(new Runnable() {
-            DatagramSocket ds = null;
-
-            @Override
-            public void run() {
-
-                try {
-                    ds = new DatagramSocket();
-                    // IP Address below is the IP address of that Device where server socket is opened.
-                    InetAddress serverAddr = InetAddress.getByName(hostIP);
-                    DatagramPacket dp;
-                    ds.setReuseAddress(true);
-                    ds.setSoTimeout(1000);
-                    while (!Thread.currentThread().isInterrupted()) {
-                        if (!mUDPCmdQueue.isEmpty()) {
-                            String data = mUDPCmdQueue.poll();
-                            if (data == null) continue;
-                            data += "\n";
-                            dp = new DatagramPacket(data.getBytes(), data.length(), serverAddr, hostPort);
-                            ds.send(dp);
-                            long diff = System.currentTimeMillis() - sendTS;
-                            if (diff > 10) {
-                                Log.d(TAG, "YOOOO what's with the delay?:(" + diff + "ms) " + data);
-                            }
-                        } else Thread.sleep(0, 1);
-                    }
-                } catch (SocketTimeoutException ste) {
-                    Log.e(TAG, "run: ", ste);
-                    mUDPClientThread.interrupt();
-                } catch (Exception e) {
-                    Log.e(TAG, "startUDPClientThread Thread run: ", e);
-                } finally {
-                    if (ds != null) {
-                        ds.close();
-                    }
-                }
-            }
-        });
+        mUDPClientThread = new UDPClientThread(hostIP, hostPort, mUDPCmdQueue);
         mUDPClientThread.start();
     }
 
