@@ -63,6 +63,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         void OnClickDefaultEvent();
         void OnClickOptionsEvent();
         void OnClickDoubleEvent();
+        void OnTapEvent(int fingers);
         void OnFlashScreen(long duration);
     }
 
@@ -86,6 +87,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         actionNone,
         actionSwipe,
         actionPinch,
+        actionScroll,
         actionTaps,
         actionMove
     };
@@ -157,6 +159,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     private int mFingersDown = 0;
+    private int mTapFingers = 0;
     private int mPinchFingersDown = 0;
     private int mScrollFingersDown = 0;
     private SwipeDirection mSwipeDirection = SwipeDirection.swipeDown;
@@ -167,9 +170,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     private float mPinchScaleFactor = 0.f;
 
     private TouchGesturesEventsListener mListener = null;
-
-//    private boolean rightIsTop = true;
-    private boolean rightIsTop = false;
     private boolean moveDrag = false;
     private View targetView = null;
 
@@ -239,7 +239,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     @Override
     public void onScaleEnd(ScaleGestureDetector detector) {
         if (mMovementAction != MovementAction.actionPinch) return;
-        mMovementAction = MovementAction.actionNone;
 //        Log.d(TAG, "onScaleEnd: " + mPinchScaleFactor);
         long currTS = System.currentTimeMillis();
         if (!isBounce(mLastActionTS, currTS)) {
@@ -266,7 +265,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         if (mMovementAction == MovementAction.actionPinch && mFingersDown != 1) return true;
         SwipeDirection swipeDirection = swipeDirectionFromXYDist(distanceX, distanceY);
         long currTS = System.currentTimeMillis();
-        Log.d(TAG, "onScroll: " + swipeDirection.toString() + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
+        boolean isScrollOrNone = (mMovementAction == MovementAction.actionNone) || (mMovementAction == MovementAction.actionScroll);
+//        Log.d(TAG, "onScroll: " + swipeDirection.toString() + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
         if ((mFingersDown > 2) && (mMovementAction == MovementAction.actionNone)) {
             // swipe with 3 or more fingers
             if (mFingersDown >= mScrollFingersDown) {
@@ -276,7 +276,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             }
             mLastActionTS = currTS;
             return true;
-        } else if ((mFingersDown == 2) && !isBounce(mLastActionTS, currTS) && (mMovementAction == MovementAction.actionNone)) {
+        } else if ((mFingersDown == 2) && !isBounce(mLastActionTS, currTS) && isScrollOrNone) {
+            mMovementAction = MovementAction.actionScroll;
             // scroll with 2 fingers
             String speed = "FAST";
             float absX = Math.abs(distanceX);
@@ -308,11 +309,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             // move cursor with one finger
             float x = -distanceX;
             float y = -distanceY;
-            if (rightIsTop) {
-                // rotate 90 degrees counter-clockwise
-                y = distanceX * 2;
-                x = -distanceY * 2;
-            }
 
             if ((x != 0) && (y != 0)) {
                 sendOnMoveEvent(x, y);
@@ -364,15 +360,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
 
             dist = Math.abs(yDist);
         }
-        if (rightIsTop) {
-            // translate 90 degrees counter-clockwise
-            switch (direction) {
-                case swipeUp: direction = SwipeDirection.swipeLeft; break;
-                case swipeDown: direction = SwipeDirection.swipeRight; break;
-                case swipeLeft: direction = SwipeDirection.swipeUp; break;
-                case swipeRight: direction = SwipeDirection.swipeDown; break;
-            }
-        }
+
 //        Log.d(TAG, "swipeDirectionFromXYDist: " + direction.toString() + " dist: " + dist + " x: " + xDist + " y: " + yDist);
         return direction;
     }
@@ -400,11 +388,13 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         if (action == MotionEvent.ACTION_DOWN) {
             // at least one finger down
             mFingersDown = 1;
+            mTapFingers = 1;
             mScrollFingersDown = 0;
             mMovementAction = MovementAction.actionNone;
         } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
             // two or more fingers down
             mFingersDown++;
+            mTapFingers++;
         } else if (action == MotionEvent.ACTION_POINTER_UP) {
             // one finger was raised from the screen surface
             mFingersDown--;
@@ -415,7 +405,11 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 mListener.OnMoveDragEndEvent();
             } else if (mMovementAction == MovementAction.actionSwipe) {
                 mListener.OnSwipeEvent(mSwipeDirection, mScrollFingersDown);
+            } else if (mMovementAction == MovementAction.actionNone) {
+//                Log.d(TAG, "onTouch: UP " + mTapFingers);
+                mListener.OnTapEvent(mTapFingers);
             }
+            mMovementAction = MovementAction.actionNone;
         } else if (action == MotionEvent.ACTION_MOVE) {
             if (moveDrag) {
                 int historySize = event.getHistorySize();
@@ -426,13 +420,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                     float y1 = event.getHistoricalY(historySize -1);
                     float x = x1 - x0;
                     float y = y1 - y0;
-
-                    if (rightIsTop) {
-                        // rotate 90 degrees counter-clockwise
-                        float t = y;
-                        y = -x;
-                        x = t;
-                    }
 
                     if ((x != 0) && (y != 0)) {
                         sendOnMoveEvent(x, y);

@@ -130,7 +130,7 @@ public class TouchpadActivity extends AppCompatActivity
         mContentView = binding.fullscreenContent;
         mStatusTextView = binding.statusTextView;
 
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
         AppPrefs.loadPreferences(this);
 
@@ -388,6 +388,11 @@ public class TouchpadActivity extends AppCompatActivity
     public void OnClickDoubleEvent() {
 //        Log.d(TAG, "OnClickDoubleEvent: ");
         sendGestureEvent("ACTION:CLICK_DOUBLE");
+    }
+
+    @Override
+    public void OnTapEvent(int fingers) {
+        sendGestureEvent("ACTION:TAP " + fingers);
     }
 
     @Override
