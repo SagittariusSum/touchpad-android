@@ -25,14 +25,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.opensourcesoftware.mobiletouchpad;
 
 import android.os.Build;
-import android.os.Handler;
 import android.os.VibrationEffect;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
-import android.view.ViewConfiguration;
-import android.util.Log;
 import android.os.Vibrator;
 
 import androidx.core.view.GestureDetectorCompat;
@@ -132,11 +129,11 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             moveDrag = (mFingersDown == 1);
             if (moveDrag) {
 //                    Log.d(TAG, "onLongPressEvent: MOVE_DRAG_BEGIN");
-                vibrate(100);
+                vibrate(AppPrefs.KVIBRATE_SHORT);
                 mListener.OnMoveDragBeginEvent();
             }
             if (mFingersDown == 2) {
-                vibrate(150);
+                vibrate(AppPrefs.KVIBRATE_LONG);
                 mListener.OnClickOptionsEvent();
             }
         });

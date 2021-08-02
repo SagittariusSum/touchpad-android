@@ -408,7 +408,7 @@ public class TouchpadActivity extends AppCompatActivity
     }
 
     private void sendGestureEvent(String s) {
-        Log.d(TAG, "sendGestureEvent: " + s);
+//        Log.d(TAG, "sendGestureEvent: " + s);
         mUDPCmdQueue.add(s);
     }
 

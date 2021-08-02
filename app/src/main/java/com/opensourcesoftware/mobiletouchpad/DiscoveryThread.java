@@ -75,13 +75,13 @@ public class DiscoveryThread extends Thread {
     }
 
     private void checkServer(MEVSystemItem item) {
-        Log.d(TAG, "checkServer: " + item.toString());
+//        Log.d(TAG, "checkServer: " + item.toString());
         mListener.onSystemFound(item);
     }
 
     @Override
     public void run() {
-        Log.d(TAG, "run: START");
+//        Log.d(TAG, "run: START");
         String data = "";
         byte[] rawMsg = new byte[1000];
         MulticastSocket ds = null;
@@ -109,7 +109,7 @@ public class DiscoveryThread extends Thread {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "run: ", e);
+//            Log.e(TAG, "run: ", e);
         } finally {
             if (ds != null) {
                 ds.close();

@@ -247,7 +247,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     @Override
     public void onSystemFound(DiscoveryThread.MEVSystemItem item) {
-        Log.d(TAG, "onSystemFound: ");
+//        Log.d(TAG, "onSystemFound: ");
         runOnUiThread(() -> {
             boolean exists = false;
             for (DiscoveryThread.MEVSystemItem x : mServerList) {
