@@ -438,7 +438,9 @@ public class TouchpadActivity extends AppCompatActivity
                     ds.setSoTimeout(1000);
                     while (!Thread.currentThread().isInterrupted()) {
                         if (!mUDPCmdQueue.isEmpty()) {
-                            final String data = mUDPCmdQueue.poll() + "\n";
+                            String data = mUDPCmdQueue.poll();
+                            if (data == null) continue;
+                            data += "\n";
                             dp = new DatagramPacket(data.getBytes(), data.length(), serverAddr, hostPort);
                             ds.send(dp);
                             long diff = System.currentTimeMillis() - sendTS;

@@ -68,6 +68,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
 
     private final static String TAG = "TouchGestures";
     private final static float KBOUNDS_XY = 100.f;
+    private final static long KBOUNCE_MS = 55;
 
     public enum SwipeDirection {
         swipeUp,
@@ -137,13 +138,13 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     private int mFingersDown = 0;
-    private int mPingFingersDown = 0;
+    private int mPinchFingersDown = 0;
     private int mScrollFingersDown = 0;
     private SwipeDirection mSwipeDirection = SwipeDirection.swipeDown;
 
-    private long lastMovementActionTS = 0;
-    private MovementAction movementAction = MovementAction.actionNone;
-    private PinchDirection movePinchDirection;
+    private long mLastActionTS = 0;
+    private MovementAction mMovementAction = MovementAction.actionNone;
+    private PinchDirection mMovePinchDirection;
     private float mPinchScaleFactor = 0.f;
 
     private TouchGesturesEventsListener mListener = null;
@@ -159,6 +160,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
 
     private boolean mScrollNatural = false;
     private float mScrollMultiplier = 1.f;
+
+//    private final Handler mainHandler = new Handler();
 
     public TouchpadGestures(View v, TouchGesturesEventsListener listener) {
         targetView = v;
@@ -195,12 +198,19 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+//        Log.d(TAG, "onScaleBegin: FINGERS " + mFingersDown);
+        mPinchFingersDown = mFingersDown;
+        mMovementAction = MovementAction.actionPinch;
+        return true;
+    }
+
+    @Override
     public boolean onScale(ScaleGestureDetector detector) {
 //        Log.d(TAG, "onScale: ");
         mPinchScaleFactor = detector.getScaleFactor();
-        if (mPinchScaleFactor < 0.7f || mPinchScaleFactor > 1.3f) {
-            movementAction = MovementAction.actionPinch;
-            movePinchDirection = (mPinchScaleFactor < 1.f) ?
+        if ((mPinchScaleFactor < 0.7f || mPinchScaleFactor > 1.3f) && (mMovementAction == MovementAction.actionPinch)) {
+            mMovePinchDirection = (mPinchScaleFactor < 1.f) ?
                     PinchDirection.pinchOut :
                     PinchDirection.pinchIn;
         }
@@ -208,51 +218,51 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     @Override
-    public boolean onScaleBegin(ScaleGestureDetector detector) {
-//        Log.d(TAG, "onScaleBegin: FINGERS " + mFingersDown);
-        mPingFingersDown = mFingersDown;
-        return true;
-    }
-
-    @Override
     public void onScaleEnd(ScaleGestureDetector detector) {
-        movementAction = MovementAction.actionNone;
+        if (mMovementAction != MovementAction.actionPinch) return;
+        mMovementAction = MovementAction.actionNone;
 //        Log.d(TAG, "onScaleEnd: " + mPinchScaleFactor);
         long currTS = System.currentTimeMillis();
-        if (!isBounce(lastMovementActionTS, currTS)) {
-            lastMovementActionTS = currTS;
-            mListener.OnPinchEvent(movePinchDirection, mPingFingersDown);
+        if (!isBounce(mLastActionTS, currTS)) {
+            mLastActionTS = currTS;
+            mListener.OnPinchEvent(mMovePinchDirection, mPinchFingersDown);
         }
     }
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 //        Log.d(TAG, "onFling: FINGERS " + mScrollFingersDown);
-        if (mScrollFingersDown >= 3) {
-            if (isBounce(lastMovementActionTS, System.currentTimeMillis())) {
-                return false;
-            }
-            lastMovementActionTS = System.currentTimeMillis();
-            mListener.OnSwipeEvent(mSwipeDirection, mScrollFingersDown);
-        }
-        return false;
+//        if (mScrollFingersDown >= 3) {
+//            if (isBounce(lastMovementActionTS, System.currentTimeMillis())) {
+//                return true;
+//            }
+//            lastMovementActionTS = System.currentTimeMillis();
+//            mListener.OnSwipeEvent(mSwipeDirection, mScrollFingersDown);
+//        }
+        return true;
     }
 
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        if (movementAction == MovementAction.actionPinch && mFingersDown != 1) return true;
+        if (mMovementAction == MovementAction.actionPinch && mFingersDown != 1) return true;
         SwipeDirection swipeDirection = swipeDirectionFromXYDist(distanceX, distanceY);
         long currTS = System.currentTimeMillis();
-//        Log.d(TAG, "onScroll: " + swipeDirection.toString() + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
-        if (mFingersDown > 2) {
+        Log.d(TAG, "onScroll: " + swipeDirection.toString() + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
+        if ((mFingersDown > 2) && (mMovementAction == MovementAction.actionNone)) {
             // swipe with 3 or more fingers
-            mScrollFingersDown = mFingersDown;
-            mSwipeDirection = swipeDirection;
-            return false;
-        } else if (mFingersDown == 2) {
+            if (mFingersDown >= mScrollFingersDown) {
+                mScrollFingersDown = mFingersDown;
+                mSwipeDirection = swipeDirection;
+                mMovementAction = MovementAction.actionSwipe;
+            }
+            mLastActionTS = currTS;
+            return true;
+        } else if ((mFingersDown == 2) && !isBounce(mLastActionTS, currTS) && (mMovementAction == MovementAction.actionNone)) {
             // scroll with 2 fingers
             String speed = "FAST";
-            float dist = Math.max(Math.abs(distanceX), Math.abs(distanceY));
+            float absX = Math.abs(distanceX);
+            float absY = Math.abs(distanceY);
+            float dist = Math.max(absX, absY);
             if (dist <= 15.f) {
                 speed = "SLOW";
             } else if (dist <= 30.f) {
@@ -260,7 +270,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             }
             speed += " " + dist;
             float scrollDelta = 5;
-//            if (Math.abs(distanceX) >= scrollDelta || Math.abs(distanceY) >= scrollDelta) {
             if (dist >= scrollDelta) {
                 switch (swipeDirection) {
                     case swipeUp:
@@ -274,10 +283,9 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                     case swipeLeft: mListener.OnScrollLeftEvent(speed); break;
                     case swipeRight: mListener.OnScrollRightEvent(speed); break;
                 }
-                lastMovementActionTS = System.currentTimeMillis();
+                mLastActionTS = System.currentTimeMillis();
             }
-        } else {
-            mScrollFingersDown = mFingersDown;
+        } else if (!isBounce(mLastActionTS, currTS) && (mMovementAction == MovementAction.actionNone)) {
             // move cursor with one finger
             float x = -distanceX;
             float y = -distanceY;
@@ -295,7 +303,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     private float limitToBounds(float value, float lower, float upper) {
-        if (value > 0.f && value > upper) {
+        if (value > upper) {
             return upper;
         } else if (value < lower) {
             return lower;
@@ -351,7 +359,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     private boolean isBounce(long prevTMS, long currTMS) {
-        return ((currTMS - prevTMS) <= 55);
+        return ((currTMS - prevTMS) <= KBOUNCE_MS);
     }
 
     private void vibrate(long duration) {
@@ -373,6 +381,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
         if (action == MotionEvent.ACTION_DOWN) {
             // at least one finger down
             mFingersDown = 1;
+            mScrollFingersDown = 0;
+            mMovementAction = MovementAction.actionNone;
         } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
             // two or more fingers down
             mFingersDown++;
@@ -384,6 +394,8 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
             if (moveDrag) {
                 moveDrag = false;
                 mListener.OnMoveDragEndEvent();
+            } else if (mMovementAction == MovementAction.actionSwipe) {
+                mListener.OnSwipeEvent(mSwipeDirection, mScrollFingersDown);
             }
         } else if (action == MotionEvent.ACTION_MOVE) {
             if (moveDrag) {
