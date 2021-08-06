@@ -49,6 +49,7 @@ public class UDPClientThread extends Thread {
     @Override
     public void run() {
         DatagramSocket ds = null;
+        long tsLastSend = 0;
         try {
             ds = new DatagramSocket();
             // IP Address below is the IP address of that Device where server socket is opened.
@@ -57,12 +58,16 @@ public class UDPClientThread extends Thread {
             ds.setReuseAddress(true);
             ds.setSoTimeout(1000);
             while (!isInterrupted()) {
+                long currTS = System.currentTimeMillis();
                 if (!mCmdQueue.isEmpty()) {
                     String data = mCmdQueue.poll();
                     if (data == null) continue;
                     data += "\n";
                     dp = new DatagramPacket(data.getBytes(), data.length(), serverAddr, mHostPort);
                     ds.send(dp);
+                    tsLastSend = currTS;
+                } else if ((currTS - tsLastSend) >= AppPrefs.KPING_INTERVAL) {
+                    mCmdQueue.add(CmdConsts.KCOMM_PING);
                 } else Thread.sleep(0, 1);
             }
         } catch (SocketTimeoutException ste) {

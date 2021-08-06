@@ -26,6 +26,7 @@ package com.opensourcesoftware.mobiletouchpad;
 
 import android.os.Build;
 import android.os.VibrationEffect;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -112,6 +113,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     private float mScrollMultiplier = 1.f;
 
     private long mBounceTimeOutMS = 55;
+    private long mLongPressTimeOut = UILongPressGestureRecognizer.KLONG_PRESS_TIMEOUT_MAX;
 
 //    private final Handler mainHandler = new Handler();
 
@@ -125,18 +127,15 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
 
         mLongPressGestureRecognizer = new UILongPressGestureRecognizer(() -> {
 //                Log.d(TAG, "onLongPressEvent: FINGERS: " + mFingersDown);
-            mMovementAction = MovementAction.actionLongPress;
-            moveDrag = (mFingersDown == 1);
-            if (moveDrag) {
-//                    Log.d(TAG, "onLongPressEvent: MOVE_DRAG_BEGIN");
-                vibrate(AppPrefs.KVIBRATE_SHORT);
-                mListener.OnMoveDragBeginEvent();
-            }
-            if (mFingersDown == 2) {
+            long currTS = System.currentTimeMillis();
+            if (mFingersDown == 2 && ((currTS - mLastActionTS) >= mLongPressTimeOut)) {
+                mMovementAction = MovementAction.actionLongPress;
                 vibrate(AppPrefs.KVIBRATE_LONG);
                 mListener.OnClickOptionsEvent();
             }
+            mLastActionTS = currTS;
         });
+        mLongPressTimeOut = mLongPressGestureRecognizer.getLongPressTimeOut();
     }
 
     public void setBounce(long bounce) {
@@ -196,12 +195,28 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
     }
 
     @Override
+    public void onLongPress(MotionEvent e) {
+//        Log.d(TAG, "onLongPress: ONE FINGER");
+
+        if (mMovementAction != MovementAction.actionNone) return;
+        if (isBounce(mLastActionTS, System.currentTimeMillis())) return;
+        // better detection for one finger long press
+        mMovementAction = MovementAction.actionLongPress;
+        moveDrag = true;
+        vibrate(AppPrefs.KVIBRATE_SHORT);
+        mListener.OnMoveDragBeginEvent();
+
+//        super.onLongPress(e);
+    }
+
+    @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (mMovementAction == MovementAction.actionPinch && mFingersDown != 1) return true;
         SwipeDirection swipeDirection = swipeDirectionFromXYDist(distanceX, distanceY);
         long currTS = System.currentTimeMillis();
         boolean isScrollOrNone = (mMovementAction == MovementAction.actionNone) || (mMovementAction == MovementAction.actionScroll);
-//        Log.d(TAG, "onScroll: " + swipeDirection.toString() + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
+//        Log.d(TAG, "onScroll: " + (mFingersDown >= 2 ? swipeDirection.toString() : "") + " X: " + distanceX + " Y: " + distanceY + " FINGERS: " + mFingersDown);
+
         if ((mFingersDown > 2) && (mMovementAction == MovementAction.actionNone)) {
             // swipe with 3 or more fingers
             if (mFingersDown >= mScrollFingersDown) {
@@ -224,7 +239,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 speed = "NORMAL";
             }
             speed += " " + dist;
-            float scrollDelta = 5;
+            float scrollDelta = 2.5f;//5;
             if (dist >= scrollDelta) {
                 switch (swipeDirection) {
                     case swipeUp:
@@ -240,7 +255,7 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 }
                 mLastActionTS = System.currentTimeMillis();
             }
-        } else if (!isBounce(mLastActionTS, currTS) && (mMovementAction == MovementAction.actionNone)) {
+        } else if ((mFingersDown == 1) && (mMovementAction == MovementAction.actionNone)) {
             // move cursor with one finger
             float x = -distanceX;
             float y = -distanceY;
@@ -359,7 +374,6 @@ public class TouchpadGestures extends GestureDetector.SimpleOnGestureListener
                 return true;
             }
         }
-
 
         mScaleDetector.onTouchEvent(event);
         mGestureDetectorCompat.onTouchEvent(event);

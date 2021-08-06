@@ -36,11 +36,13 @@ public class UILongPressGestureRecognizer {
 
     private final String TAG = "UILongPressGestureRecog";
 
+    public static final long KLONG_PRESS_TIMEOUT_MAX = 500;
+
     private UILongPressGestureRecognizerListener mListener = null;
     private final Handler mHandler = new Handler();
     private final Runnable mLongPressed = () -> mListener.onLongPressEvent();
     private long mTouchDownTS;
-    private int mLongPressTimeout = 500;
+    private long mLongPressTimeout = KLONG_PRESS_TIMEOUT_MAX;
     private boolean mInitLastXY = false;
     private boolean mHasCallbacks = false;
     private float mLastX = 0.f;
@@ -49,6 +51,9 @@ public class UILongPressGestureRecognizer {
     public UILongPressGestureRecognizer(UILongPressGestureRecognizerListener longPressListener) {
         this.mListener = longPressListener;
         this.mLongPressTimeout = ViewConfiguration.getLongPressTimeout();
+        if (this.mLongPressTimeout > KLONG_PRESS_TIMEOUT_MAX) {
+            this.mLongPressTimeout = KLONG_PRESS_TIMEOUT_MAX;
+        }
     }
 
     private void resetHandler(boolean addCallback) {
@@ -58,6 +63,10 @@ public class UILongPressGestureRecognizer {
             mHandler.postDelayed(mLongPressed, mLongPressTimeout);
             mHasCallbacks = true;
         }
+    }
+
+    public long getLongPressTimeOut() {
+        return mLongPressTimeout;
     }
 
     public boolean onTouchEvent(MotionEvent event) {

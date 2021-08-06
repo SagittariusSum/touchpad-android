@@ -38,4 +38,6 @@ public class CmdConsts {
     public static final String KACTION_CLICK_OPTIONS = "ACTION:CLICK_OPTIONS";
     public static final String KACTION_CLICK_DOUBLE = "ACTION:CLICK_DOUBLE";
     public static final String KACTION_TAP = "ACTION:TAP";
+
+    public static final String KCOMM_PING = "PING";
 }

@@ -43,6 +43,8 @@ public final class AppPrefs {
     public static final Integer KVIBRATE_SHORT = 100;
     public static final Integer KVIBRATE_LONG = 150;
 
+    public static final long KPING_INTERVAL = 1000;
+
     private static final String KAPP_PREFS_NAME = "app_prefs";
     private static final String KKEY_SCROLL_MULTIPLIER = "SCROLL.MULTIPLIER";
     private static final String KKEY_SCROLL_NATURAL = "SCROLL.NATURAL";
