@@ -9,7 +9,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.util.Log;
 
 import java.util.List;
 
@@ -32,17 +31,19 @@ public class DeviceShakeDetector implements SensorEventListener {
     private long mLastShakeTS = 0;
 
     public DeviceShakeDetector(DeviceShakeDetectorListener listener) {
+        Logging.d(TAG, "DeviceShakeDetector()");
         this.mListener = listener;
     }
 
     public boolean initAccelerometer(Context ctx) {
+        Logging.d(TAG, "initAccelerometer");
         mSensorManager = (SensorManager)ctx.getSystemService(Context.SENSOR_SERVICE);
         List<Sensor> list = mSensorManager.getSensorList(Sensor.TYPE_ALL);
         if (list.size() > 0) {
-            Log.d(TAG, "initAccelerometer: found " + list.size() + " sensors!");
+            Logging.d(TAG, "initAccelerometer: found " + list.size() + " sensors!");
             for (int i = 0; i < list.size(); i++) {
                 Sensor s = list.get(i);
-                Log.d(TAG, "initAccelerometer/Sensor: "  + s.getStringType() + " / " + s.getType() + " / " + s.getName() + " / " + s.getPower());
+                Logging.d(TAG, "initAccelerometer/Sensor: "  + s.getStringType() + " / " + s.getType() + " / " + s.getName() + " / " + s.getPower());
                 if (s.getType() == Sensor.TYPE_ACCELEROMETER) {
                     init = false;
 
@@ -54,17 +55,19 @@ public class DeviceShakeDetector implements SensorEventListener {
     }
 
     public void registerListener() {
+        Logging.d(TAG, "registerListener");
         if (mAccelerometer != null)
             mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void unregisterListener() {
+        Logging.d(TAG, "unregisterListener");
         mSensorManager.unregisterListener(this);
     }
 
     @Override
     public void onSensorChanged(SensorEvent e) {
-//        Log.d(TAG, "onSensorChanged: " + e.timestamp + " / " + e.accuracy);
+        Logging.d(TAG, "onSensorChanged: " + e.timestamp + " / " + e.accuracy);
 
         //Get x,y and z values
         float x,y,z;
@@ -105,6 +108,6 @@ public class DeviceShakeDetector implements SensorEventListener {
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Log.d(TAG, "onAccuracyChanged: " + sensor.toString() + " accuracy: " + accuracy);
+        Logging.d(TAG, "onAccuracyChanged: " + sensor.toString() + " accuracy: " + accuracy);
     }
 }

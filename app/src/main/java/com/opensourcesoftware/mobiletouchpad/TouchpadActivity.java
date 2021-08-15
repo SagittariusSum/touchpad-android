@@ -39,14 +39,8 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketTimeoutException;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -83,6 +77,7 @@ public class TouchpadActivity extends AppCompatActivity
         @SuppressLint("InlinedApi")
         @Override
         public void run() {
+            Logging.d(TAG, "mHidePart2Runnable");
             // Delayed removal of status and navigation bar
 
             // Note that some of these constants are new as of API 16 (Jelly Bean)
@@ -96,16 +91,14 @@ public class TouchpadActivity extends AppCompatActivity
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
     };
-    private final Runnable mShowPart2Runnable = new Runnable() {
-        @Override
-        public void run() {
-            // Delayed display of UI elements
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.show();
-            }
-//            mControlsView.setVisibility(View.VISIBLE);
+    private final Runnable mShowPart2Runnable = () -> {
+        Logging.d(TAG, "mShowPart2Runnable");
+        // Delayed display of UI elements
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.show();
         }
+//            mControlsView.setVisibility(View.VISIBLE);
     };
     private boolean mVisible;
     private final Runnable mHideRunnable = () -> hide();
@@ -120,6 +113,7 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Logging.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
 
         binding = ActivityTouchpadBinding.inflate(getLayoutInflater());
@@ -162,8 +156,8 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
+        Logging.d(TAG, "onPostCreate: ");
         super.onPostCreate(savedInstanceState);
-
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
@@ -172,12 +166,14 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     protected void onPause() {
+        Logging.d(TAG, "onPause");
         super.onPause();
         mDeviceShakeDetector.unregisterListener();
     }
 
     @Override
     protected void onPostResume() {
+        Logging.d(TAG, "onPostResume");
         super.onPostResume();
         delayedHide(100);
         mDeviceShakeDetector.registerListener();
@@ -186,6 +182,7 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     protected void onResume() {
+        Logging.d(TAG, "onResume");
         super.onResume();
         if (mWakeLock != null) {
             mWakeLock.acquire(10*60*1000L /*10 minutes*/);
@@ -194,13 +191,17 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
+        Logging.d(TAG, "onDestroy");
         super.onDestroy();
         if (mWakeLock != null) {
+            Logging.d(TAG, "mWakeLock.release()");
             mWakeLock.release();
         }
     }
 
     private void applySettings() {
+        Logging.d(TAG, "applySettings");
+
         AppPrefs.loadPreferences(this);
         mTouchpadGestures.setBounce(AppPrefs.getBounce());
         mTouchpadGestures.setScrollMultiplier(AppPrefs.getScrollMultiplier());
@@ -209,6 +210,7 @@ public class TouchpadActivity extends AppCompatActivity
     }
 
     private void setStatusColors(StatusType statusType) {
+        Logging.d(TAG, "setStatusColors");
         int colorBg = 0;
         int colorFg = 0;
         Resources.Theme theme = getTheme();
@@ -228,6 +230,7 @@ public class TouchpadActivity extends AppCompatActivity
     }
 
     private void setStatusText(StatusType statusType, String text) {
+        Logging.d(TAG, "setStatusText");
         setStatusColors(statusType);
         mStatusTextView.setText(text);
     }
@@ -238,6 +241,8 @@ public class TouchpadActivity extends AppCompatActivity
         public void onReceive(Context context, Intent intent) {
             int extraWifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,
                     WifiManager.WIFI_STATE_UNKNOWN);
+
+            Logging.d(TAG, "WifiStateChangedReceiver.onReceive extraWifiState: " + extraWifiState);
 
             switch (extraWifiState) {
                 case WifiManager.WIFI_STATE_ENABLED:
@@ -263,17 +268,19 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     public void onDeviceShakeDetected() {
-        Log.d(TAG, "onDeviceShakeDetected: SHAKE");
+        Logging.d(TAG, "onDeviceShakeDetected: SHAKE");
 
 //        showSettings();
     }
 
     private void showSettings() {
+        Logging.d(TAG, "showSettings");
         Intent i = new Intent(this, SettingsActivity.class);
         startActivity(i);
     }
 
     private void hide() {
+        Logging.d(TAG, "hide");
         // Hide UI first
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -292,13 +299,14 @@ public class TouchpadActivity extends AppCompatActivity
      * previously scheduled calls.
      */
     private void delayedHide(int delayMillis) {
+        Logging.d(TAG, "delayedHide");
         mMainHandler.removeCallbacks(mHideRunnable);
         mMainHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
     @Override
     public void OnSwipeEvent(TouchpadGestures.SwipeDirection direction, int fingers) {
-//        Log.d(TAG, "OnSwipeEvent: " + direction.toString() + " fingers: " + String.valueOf(fingers));
+        Logging.d(TAG, "OnSwipeEvent: " + direction.toString() + " fingers: " + String.valueOf(fingers));
         int up = 0;
         int down = 0;
         int left = 0;
@@ -327,77 +335,79 @@ public class TouchpadActivity extends AppCompatActivity
 
     @Override
     public void OnPinchEvent(TouchpadGestures.PinchDirection direction, int fingers) {
-//        Log.d(TAG, "OnPinchEvent: " + direction.toString() + " fingers: " + String.valueOf(fingers));
+        Logging.d(TAG, "OnPinchEvent: " + direction.toString() + " fingers: " + String.valueOf(fingers));
         sendGestureEvent(CmdConsts.KGESTURE_PINCH + " " + (direction == TouchpadGestures.PinchDirection.pinchIn ? "IN" : "OUT") + " " + fingers + " ok");
     }
 
     @Override
     public void OnMoveDragBeginEvent() {
-//        Log.d(TAG, "OnMoveDragBeginEvent: ");
+        Logging.d(TAG, "OnMoveDragBeginEvent: ");
         sendGestureEvent(CmdConsts.KACTION_MOVE_DRAG_BEGIN);
     }
 
     @Override
     public void OnMoveDragEndEvent() {
-//        Log.d(TAG, "OnMoveDragEndEvent: ");
+        Logging.d(TAG, "OnMoveDragEndEvent: ");
         sendGestureEvent(CmdConsts.KACTION_MOVE_DRAG_END);
     }
 
     @Override
     public void OnMoveEvent(int x, int y) {
-//        Log.d(TAG, "OnMoveEvent: ");
+        Logging.d(TAG, "OnMoveEvent: ");
         sendGestureEvent(CmdConsts.KACTION_MOVE + " " + x + " " + y);
     }
 
     @Override
     public void OnScrollDownEvent(String speed) {
-//        Log.d(TAG, "OnScrollDownEvent: " + speed);
+        Logging.d(TAG, "OnScrollDownEvent: " + speed);
         sendGestureEvent(CmdConsts.KSCROLL_DOWN + " " + speed);
     }
 
     @Override
     public void OnScrollUpEvent(String speed) {
-//        Log.d(TAG, "OnScrollUpEvent: " + speed);
+        Logging.d(TAG, "OnScrollUpEvent: " + speed);
         sendGestureEvent(CmdConsts.KSCROLL_UP + " " + speed);
     }
 
     @Override
     public void OnScrollLeftEvent(String speed) {
-//        Log.d(TAG, "OnScrollLeftEvent: " + speed);
+        Logging.d(TAG, "OnScrollLeftEvent: " + speed);
         sendGestureEvent(CmdConsts.KSCROLL_LEFT + " " + speed);
     }
 
     @Override
     public void OnScrollRightEvent(String speed) {
-//        Log.d(TAG, "OnScrollRightEvent: " + speed);
+        Logging.d(TAG, "OnScrollRightEvent: " + speed);
         sendGestureEvent(CmdConsts.KSCROLL_RIGHT + " " + speed);
     }
 
     @Override
     public void OnClickDefaultEvent() {
-//        Log.d(TAG, "OnClickDefaultEvent: ");
+        Logging.d(TAG, "OnClickDefaultEvent: ");
         sendGestureEvent(CmdConsts.KACTION_CLICK_DEFAULT);
     }
 
     @Override
     public void OnClickOptionsEvent() {
-//        Log.d(TAG, "OnClickOptionsEvent: ");
+        Logging.d(TAG, "OnClickOptionsEvent: ");
         sendGestureEvent(CmdConsts.KACTION_CLICK_OPTIONS);
     }
 
     @Override
     public void OnClickDoubleEvent() {
-//        Log.d(TAG, "OnClickDoubleEvent: ");
+        Logging.d(TAG, "OnClickDoubleEvent: ");
         sendGestureEvent(CmdConsts.KACTION_CLICK_DOUBLE);
     }
 
     @Override
     public void OnTapEvent(int fingers) {
+        Logging.d(TAG, "OnTapEvent: ");
         sendGestureEvent(CmdConsts.KACTION_TAP + " " + fingers);
     }
 
     @Override
     public void OnFlashScreen(long duration) {
+        Logging.d(TAG, "OnFlashScreen");
         mContentView.setBackgroundColor(mContentBackgroundColorFlash);
         mMainHandler.postDelayed(new Runnable() {
             @Override
@@ -408,11 +418,12 @@ public class TouchpadActivity extends AppCompatActivity
     }
 
     private void sendGestureEvent(String s) {
-//        Log.d(TAG, "sendGestureEvent: " + s);
+        Logging.d(TAG, "sendGestureEvent: " + s);
         mUDPCmdQueue.add(s);
     }
 
     private void startUDPClientThread(String hostIP, Integer hostPort) {
+        Logging.d(TAG, "startUDPClientThread");
         //TODO PING-PONG for connection status
         if (mUDPClientThread != null) {
             mUDPClientThread.interrupt();

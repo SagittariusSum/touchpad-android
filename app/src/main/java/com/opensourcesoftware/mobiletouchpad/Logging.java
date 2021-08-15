@@ -24,22 +24,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.opensourcesoftware.mobiletouchpad;
 
-public class CmdConsts {
-    public static final String KSCROLL_DOWN = "SCROLL_DOWN";
-    public static final String KSCROLL_UP = "SCROLL_UP";
-    public static final String KSCROLL_LEFT = "SCROLL_LEFT";
-    public static final String KSCROLL_RIGHT = "SCROLL_RIGHT";
-    public static final String KGESTURE_SWIPE = "G_SWIPE";
-    public static final String KGESTURE_PINCH = "G_PINCH";
-    public static final String KACTION_MOVE_DRAG_BEGIN = "ACTION:MOVE_DRAG_BEGIN";
-    public static final String KACTION_MOVE_DRAG_END = "ACTION:MOVE_DRAG_END";
-    public static final String KACTION_MOVE = "ACTION:MOVE";
-    public static final String KACTION_CLICK_DEFAULT = "ACTION:CLICK_DEFAULT";
-    public static final String KACTION_CLICK_OPTIONS = "ACTION:CLICK_OPTIONS";
-    public static final String KACTION_CLICK_DOUBLE = "ACTION:CLICK_DOUBLE";
-    public static final String KACTION_TAP = "ACTION:TAP";
+import android.util.Log;
 
-    public static final String KCOMM_PING = "PING";
+public class Logging {
+
+    private static final boolean LogDebug = true;
+    public static final int LogDebugDisabledRet = 0;
+
+    public static int d(String tag, String msg) {
+        if (!LogDebug) return LogDebugDisabledRet;
+        return Log.d(tag, msg);
+    }
+
+    public static int d(String tag, String msg, Throwable tr) {
+        if (!LogDebug) return LogDebugDisabledRet;
+        return Log.d(tag, msg, tr);
+    }
+
+    public static int e(String tag, String msg) {
+        return Log.e(tag, msg);
+    }
+
+    public static int e(String tag, String msg, Throwable tr) {
+        return Log.e(tag, msg, tr);
+    }
+
 }
 
 

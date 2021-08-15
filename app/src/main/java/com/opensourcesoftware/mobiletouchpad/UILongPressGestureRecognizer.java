@@ -49,6 +49,7 @@ public class UILongPressGestureRecognizer {
     private float mLastY = 0.f;
 
     public UILongPressGestureRecognizer(UILongPressGestureRecognizerListener longPressListener) {
+        Logging.d(TAG, "UILongPressGestureRecognizer()");
         this.mListener = longPressListener;
         this.mLongPressTimeout = ViewConfiguration.getLongPressTimeout();
         if (this.mLongPressTimeout > KLONG_PRESS_TIMEOUT_MAX) {
@@ -57,6 +58,7 @@ public class UILongPressGestureRecognizer {
     }
 
     private void resetHandler(boolean addCallback) {
+        Logging.d(TAG, "resetHandler");
         mHasCallbacks = false;
         mHandler.removeCallbacks(mLongPressed);
         if (addCallback) {
@@ -72,19 +74,21 @@ public class UILongPressGestureRecognizer {
     public boolean onTouchEvent(MotionEvent event) {
         int action = (event.getAction() & MotionEvent.ACTION_MASK);
 
+        Logging.d(TAG, "onTouchEvent action: " + action);
+
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 resetHandler(true);
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-//                    Log.d(TAG, "onTouchEvent: ACTION_POINTER_DOWN");
+                Logging.d(TAG, "onTouchEvent: ACTION_POINTER_DOWN");
                 resetHandler(true);
                 mTouchDownTS = System.currentTimeMillis();
                 break;
             case MotionEvent.ACTION_MOVE:
                 float currX = event.getX();
                 float currY = event.getY();
-//                    Log.d(TAG, "onTouchEvent: ACTION_MOVE " + currX + " / " + currY);
+                Logging.d(TAG, "onTouchEvent: ACTION_MOVE " + currX + " / " + currY);
                 long tsSinceTouchDown = System.currentTimeMillis() - mTouchDownTS;
                 boolean ignoreMovement = ((Math.abs(currX - mLastX) < 5) && (Math.abs(currY - mLastY) < 5));
                 if ((tsSinceTouchDown < 60) || (!mInitLastXY) || ignoreMovement) {
@@ -95,10 +99,12 @@ public class UILongPressGestureRecognizer {
                     break;
                 }
             case MotionEvent.ACTION_UP:
-//                    Log.d(TAG, "onTouchEvent: ACTION_UP");
+                Logging.d(TAG, "onTouchEvent: ACTION_UP");
                 resetHandler(false);
                 break;
         }
         return true;
     }
 }
+
+

@@ -25,7 +25,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.opensourcesoftware.mobiletouchpad;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -69,19 +68,20 @@ public class DiscoveryThread extends Thread {
     }
 
     public DiscoveryThread(int port, Context context, DiscoveryThreadListener listener) {
+        Logging.d(TAG, "DiscoveryThread");
         this.mPort = port;
         this.mListener = listener;
         this.mContext = context;
     }
 
     private void checkServer(MEVSystemItem item) {
-//        Log.d(TAG, "checkServer: " + item.toString());
+        Logging.d(TAG, "checkServer: " + item.toString());
         mListener.onSystemFound(item);
     }
 
     @Override
     public void run() {
-//        Log.d(TAG, "run: START");
+        Logging.d(TAG, "run: START");
         String data = "";
         byte[] rawMsg = new byte[1000];
         MulticastSocket ds = null;
@@ -109,7 +109,7 @@ public class DiscoveryThread extends Thread {
                 }
             }
         } catch (Exception e) {
-//            Log.e(TAG, "run: ", e);
+            Logging.e(TAG, "run: ", e);
         } finally {
             if (ds != null) {
                 ds.close();

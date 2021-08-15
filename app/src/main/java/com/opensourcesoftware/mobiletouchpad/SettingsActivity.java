@@ -33,7 +33,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.PersistableBundle;
 import android.text.InputType;
-import android.util.Log;
+import com.opensourcesoftware.mobiletouchpad.BuildConfig;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -69,6 +69,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Logging.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
         setTitle(getResources().getString(R.string.title_activity_settings));
@@ -82,21 +83,17 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
         mServerListView = findViewById(R.id.lvServerList);
         btnScrollNatural = findViewById(R.id.btnScrollNatural);
         btnScrollNatural.setText(AppPrefs.getScrollNatural() ? R.string.yesno_yes : R.string.yesno_no);
-        btnScrollNatural.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AppPrefs.setScrollNatural(!AppPrefs.getScrollNatural());
-                AppPrefs.savePreferences(SettingsActivity.this);
-                btnScrollNatural.setText(AppPrefs.getScrollNatural() ? R.string.yesno_yes : R.string.yesno_no);
-            }
+        btnScrollNatural.setOnClickListener(v -> {
+            Logging.d(TAG, "btnScrollNatural.onClick");
+            AppPrefs.setScrollNatural(!AppPrefs.getScrollNatural());
+            AppPrefs.savePreferences(SettingsActivity.this);
+            btnScrollNatural.setText(AppPrefs.getScrollNatural() ? R.string.yesno_yes : R.string.yesno_no);
         });
         btnScrollMultiplier = findViewById(R.id.btnScrollMultiplier);
         btnScrollMultiplier.setText(AppPrefs.getScrollMultiplierText());
-        btnScrollMultiplier.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showScrollMultiplierOptions();
-            }
+        btnScrollMultiplier.setOnClickListener(v -> {
+            Logging.d(TAG, "btnScrollMultiplier.onClick");
+            showScrollMultiplierOptions();
         });
         btnUDPPort = findViewById(R.id.btnUDPPort);
         btnUDPPort.setText(String.valueOf(AppPrefs.getHostPort()));
@@ -108,20 +105,19 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
         mServerListViewAdapter = new DiscoveryThreadItemListAdapter(this, mServerList);
         mServerListView.setAdapter(mServerListViewAdapter);
 
-        mServerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                DiscoveryThread.MEVSystemItem item = mServerList.get(position);
-                AppPrefs.setHostSystem(item.getName(), item.getHostIP());
-                AppPrefs.savePreferences(SettingsActivity.this);
+        mServerListView.setOnItemClickListener((adapterView, view, position, l) -> {
+            Logging.d(TAG, "mServerListView OnItemClick");
+            DiscoveryThread.MEVSystemItem item = mServerList.get(position);
+            AppPrefs.setHostSystem(item.getName(), item.getHostIP());
+            AppPrefs.savePreferences(SettingsActivity.this);
 
-            }
         });
 
         restartDiscoveryThread();
     }
 
     private void restartDiscoveryThread() {
+        Logging.d(TAG, "restartDiscoveryThread");
         if (mDiscoveryThread != null) {
             mDiscoveryThread.interrupt();
         }
@@ -130,6 +126,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     }
 
     private void changeUDPPort() {
+        Logging.d(TAG, "changeUDPPort");
         showNumberInput(getResources().getString(R.string.settings_udp_port), AppPrefs.getHostPort().toString(), value -> {
             try {
                 Integer port = Integer.parseInt(value);
@@ -144,12 +141,13 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
                             Toast.LENGTH_LONG).show();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "onValueChanged: changeUDPPort: " + value, e);
+                Logging.e(TAG, "onValueChanged: changeUDPPort: " + value, e);
             }
         });
     }
 
     private void changeBounce() {
+        Logging.d(TAG, "changeBounce");
         showNumberInput(getResources().getString(R.string.settings_bounce), AppPrefs.getBounce().toString(), value -> {
             try {
                 Integer bounce = Integer.parseInt(value);
@@ -163,7 +161,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
                             Toast.LENGTH_LONG).show();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "onValueChanged: changeBounce: " + value, e);
+                Logging.e(TAG, "onValueChanged: changeBounce: " + value, e);
             }
         });
     }
@@ -173,6 +171,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     }
 
     private void showNumberInput(String title, String initialValue, NumberInputListener listener) {
+        Logging.d(TAG, "showNumberInput");
         AlertDialog.Builder alert = new AlertDialog.Builder(SettingsActivity.this);
         alert.setTitle(title);
         final EditText input = new EditText(SettingsActivity.this);
@@ -192,6 +191,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     }
 
     private void showScrollMultiplierOptions() {
+        Logging.d(TAG, "showScrollMultiplierOptions");
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setTitle(R.string.settings_scroll_multiplier);
         float[] multipliers = {0.5f, 1.0f, 2.0f, 2.5f, 3.0f};
@@ -204,14 +204,12 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
                 checkedItem = x;
             }
         }
-        alertDialog.setSingleChoiceItems(items, checkedItem, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                AppPrefs.setScrollMultiplier(multipliers[which]);
-                AppPrefs.savePreferences(SettingsActivity.this);
-                btnScrollMultiplier.setText(AppPrefs.getScrollMultiplierText());
-                dialog.dismiss();
-            }
+        alertDialog.setSingleChoiceItems(items, checkedItem, (dialog, which) -> {
+            Logging.d(TAG, "showScrollMultiplierOptions setSingleChoiceItems");
+            AppPrefs.setScrollMultiplier(multipliers[which]);
+            AppPrefs.savePreferences(SettingsActivity.this);
+            btnScrollMultiplier.setText(AppPrefs.getScrollMultiplierText());
+            dialog.dismiss();
         });
         AlertDialog alert = alertDialog.create();
         alert.setCanceledOnTouchOutside(false);
@@ -220,11 +218,13 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     @Override
     public void onPostCreate(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
+        Logging.d(TAG, "onPostCreate");
         super.onPostCreate(savedInstanceState, persistentState);
     }
 
     @Override
     protected void onDestroy() {
+        Logging.d(TAG, "onDestroy");
         super.onDestroy();
         
         if (mDiscoveryThread != null) {
@@ -234,11 +234,13 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     @Override
     public void onBackPressed() {
+        Logging.d(TAG, "onBackPressed");
         super.onBackPressed();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Logging.d(TAG, "onOptionsItemSelected");
         if (item.getItemId() == android.R.id.home) {
             onBackPressed();
         }
@@ -247,7 +249,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
 
     @Override
     public void onSystemFound(DiscoveryThread.MEVSystemItem item) {
-//        Log.d(TAG, "onSystemFound: ");
+        Logging.d(TAG, "onSystemFound: ");
         runOnUiThread(() -> {
             boolean exists = false;
             for (DiscoveryThread.MEVSystemItem x : mServerList) {
@@ -262,10 +264,12 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
     }
 
     public class DiscoveryThreadItemListAdapter extends BaseAdapter {
+        private static final String TAG = "DiscoveryThreadItemListAdapter";
         private final ArrayList<DiscoveryThread.MEVSystemItem> mList;
         private final LayoutInflater mLayoutInflater;
 
         public DiscoveryThreadItemListAdapter(Context aContext, ArrayList<DiscoveryThread.MEVSystemItem> list) {
+            Logging.d(TAG, "DiscoveryThreadItemListAdapter");
             this.mList = list;
             mLayoutInflater = LayoutInflater.from(aContext);
         }
@@ -286,6 +290,7 @@ public class SettingsActivity extends AppCompatActivity implements DiscoveryThre
         }
 
         public View getView(int position, View v, ViewGroup vg) {
+            Logging.d(TAG, "getView");
             ViewHolder holder;
             if (v == null) {
                 v = mLayoutInflater.inflate(R.layout.system_item, null);

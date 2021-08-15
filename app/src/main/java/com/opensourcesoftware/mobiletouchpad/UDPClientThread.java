@@ -24,8 +24,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.opensourcesoftware.mobiletouchpad;
 
-import android.util.Log;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -41,6 +39,7 @@ public class UDPClientThread extends Thread {
     private ConcurrentLinkedQueue<String> mCmdQueue;
 
     UDPClientThread(String hostIP, Integer hostPort, ConcurrentLinkedQueue<String> cmdQueue) {
+        Logging.d(TAG, "UDPClientThread()");
         mHostIP = hostIP;
         mHostPort = hostPort;
         mCmdQueue = cmdQueue;
@@ -48,6 +47,7 @@ public class UDPClientThread extends Thread {
 
     @Override
     public void run() {
+        Logging.d(TAG, "run");
         DatagramSocket ds = null;
         long tsLastSend = 0;
         try {
@@ -71,10 +71,10 @@ public class UDPClientThread extends Thread {
                 } else Thread.sleep(0, 1);
             }
         } catch (SocketTimeoutException ste) {
-            Log.e(TAG, "run: ", ste);
+            Logging.e(TAG, "run: ", ste);
             interrupt();
         } catch (Exception e) {
-            Log.e(TAG, "startUDPClientThread Thread run: ", e);
+            Logging.e(TAG, "startUDPClientThread Thread run: ", e);
         } finally {
             if (ds != null) {
                 ds.close();
@@ -82,3 +82,5 @@ public class UDPClientThread extends Thread {
         }
     }
 }
+
+
