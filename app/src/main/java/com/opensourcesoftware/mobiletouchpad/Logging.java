@@ -28,25 +28,25 @@ import android.util.Log;
 
 public class Logging {
 
-    private static final boolean LogDebug = true;
+    private static boolean LogDebug = true;
+    private static boolean LogError = true;
     public static final int LogDebugDisabledRet = 0;
+    public static final int LogErrorDisabledRet = 0;
 
     public static int d(String tag, String msg) {
-        if (!LogDebug) return LogDebugDisabledRet;
-        return Log.d(tag, msg);
+        return LogDebug ? Log.d(tag, msg) : LogDebugDisabledRet;
     }
 
     public static int d(String tag, String msg, Throwable tr) {
-        if (!LogDebug) return LogDebugDisabledRet;
-        return Log.d(tag, msg, tr);
+        return LogDebug ? Log.d(tag, msg, tr) : LogDebugDisabledRet;
     }
 
     public static int e(String tag, String msg) {
-        return Log.e(tag, msg);
+        return LogError ? Log.e(tag, msg) : LogErrorDisabledRet;
     }
 
     public static int e(String tag, String msg, Throwable tr) {
-        return Log.e(tag, msg, tr);
+        return LogError ? Log.e(tag, msg, tr) : LogErrorDisabledRet;
     }
 
 }
